@@ -26,10 +26,10 @@ var
 		init: 'init'
 	};
 	
-	// Intervals set with $$.setInt
+	// Intervals set with _.setInt
 	intervals = [],
 	
-	// Timeouts set with  $$.setTime
+	// Timeouts set with  _.setTime
 	timeouts = [],
 	
 	// All elements called with
@@ -63,7 +63,7 @@ var
 			
 			// Handle simple selectors
 			if ( typeof selector === 'string' ) {
-				// Handle simple object calls (ex: $$('object'))
+				// Handle simple object calls (ex: _('object'))
 				if ( selector.split(':').length == 1 && eval(this.selector) ) this.object = true;
 			// Handle window, document
 			} else if ( selector == window || selector == document ) {
@@ -429,48 +429,48 @@ var
 	}
 	
 	
-	// e => $$(selector).e();
+	// e => _(selector).e();
 	e = function (selector) {
 		return new Spine.fn.execute(selector).e();
 	};
 	
-	// a => $$(selector).a();
+	// a => _(selector).a();
 	a = function (selector, value) {
 		return new Spine.fn.execute(selector).a(value);
 	};
 	
-	// s => $$(selector).s();
+	// s => _(selector).s();
 	s = function (selector) {
 		return new Spine.fn.execute(selector).s();
 	};
 	
-	// c => $$(selector).c();
+	// c => _(selector).c();
 	c = function (selector) {
 		return new Spine.fn.execute(selector).c();
 	};
 	
-	// i => $$(selector).i();
+	// i => _(selector).i();
 	i = function (selector) {
 		return new Spine.fn.execute(selector).i();
 	};
 	
-	// d => $$(selector).d(value);
+	// d => _(selector).d(value);
 	d = function (selector, value) {
 		return new Spine.fn.execute(selector).d(value);
 	};
 	
-	// on => $$(selector).on(e, callback);
+	// on => _(selector).on(e, callback);
 	on = function (selector, e, callback) {
 		return new Spine.fn.execute(selector).on(e, callback);
 	};
 	
-	// on => $$(selector).off(e, callback);
+	// on => _(selector).off(e, callback);
 	off = function (selector, e, callback) {
 		return new Spine.fn.execute(selector).off(e, callback);
 	};
 	
 	// add Spine to global object
 	Spine.fn.execute.prototype = Spine.fn;
-	window.Spine = window.$$ = Spine;
+	window.Spine = window._ = Spine;
 
 })(window);
