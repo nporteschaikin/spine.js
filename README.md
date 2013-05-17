@@ -13,6 +13,14 @@ code that reads like a contemporary American novel.
 ## Enough! How do you use it
 
 ```javascript
+
+//
+//
+// ! IGNORE THIS README !
+// ! IT IS SO LAUGHABLY INCOMPLETE !
+//
+//
+
 // Separate your functions into objects, like "layout", "grid", "overlay", etc.
 var overlay = {
 
@@ -68,5 +76,3 @@ var overlay = {
 	}
 }
 ```
-
-This isn't done.
