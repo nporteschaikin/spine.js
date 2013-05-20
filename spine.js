@@ -7,7 +7,7 @@
 	var isReady;
 	
 	Spine = function(name){
-		if (!objects[name]) objects[name] = new Spine.fn.__construct(name);
+		if (!objects[name]) objects[name] = new Spine.fn.construct(name);
 		return objects[name];
 	},
 	
@@ -15,7 +15,7 @@
 	
 	Spine.fn = Spine.prototype = {
 		
-		__construct: function(name){
+		construct: function(name){
 			this._name = name;
 			return this;
 		},
@@ -143,17 +143,17 @@
 		
 	}
 	
-	Spine.fn.__construct.prototype = Spine.fn;
+	Spine.fn.construct.prototype = Spine.fn;
 	
 	var elements = {};
 	
 	Spine.e = function(selector){
-		if (!elements[selector]) elements[selector] = new Spine.e.fn.__construct(selector);
+		if (!elements[selector]) elements[selector] = new Spine.e.fn.construct(selector);
 		return elements[selector];
 	}
 	
 	Spine.$ = function(selector){
-		if (!elements[selector]) elements[selector] = new Spine.e.fn.__construct(selector);
+		if (!elements[selector]) elements[selector] = new Spine.e.fn.construct(selector);
 		return elements[selector].get();
 	}
 	
@@ -161,7 +161,7 @@
 		
 		constructor: Spine,
 		
-		__construct: function(selector) {
+		construct: function(selector) {
 			this._selector = selector;
 			return this;
 		},
@@ -211,14 +211,14 @@
 			return this;
 		},
 		
-		html: function(html) {
+		html: function(html, method) {
 			this._element || this.get();
-			return Spine.html(this, html);
+			return Spine.html(this, html, method);
 		},
 		
-		remove: function() {
+		remove: function(method) {
 			this._element || this.get();
-			return Spine.remove(this);
+			return Spine.remove(this, method);
 		},
 		
 		clean: function () {
@@ -244,7 +244,7 @@
 		
 	}
 	
-	Spine.e.fn.__construct.prototype = Spine.e.fn;
+	Spine.e.fn.construct.prototype = Spine.e.fn;
 	
 	Spine.ready = Spine.prototype = function(method) {
 		
@@ -260,7 +260,7 @@
 	
 	Spine.load = Spine.prototype = function(object) {
 		
-		if (object instanceof Spine.fn.__construct) {
+		if (object instanceof Spine.fn.construct) {
 			Spine.ready(objects[object].init);
 		} else if (!object) {
 			Spine.ready(Spine.init);
@@ -300,7 +300,7 @@
 	
 	Spine.html = Spine.prototype = function(object, html, method) {
 		
-		if (object instanceof Spine.e.fn.__construct) {
+		if (object instanceof Spine.e.fn.construct) {
 			object.get().html(html);
 		} else if (object instanceof Spine.j) {
 			object.html(html);
@@ -316,7 +316,7 @@
 	
 	Spine.remove = Spine.prototype = function(object) {
 		
-		if (object instanceof Spine.e.fn.__construct) {
+		if (object instanceof Spine.e.fn.construct) {
 			object.get().remove();
 		} else if (object instanceof Spine.j) {
 			object.remove();
