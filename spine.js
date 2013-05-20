@@ -7,7 +7,7 @@
 	var isReady;
 	
 	Spine = function(name){
-		if (!objects[name]) objects[name] = new Spine.fn.init(name);
+		if (!objects[name]) objects[name] = new Spine.fn.__construct(name);
 		return objects[name];
 	},
 	
@@ -15,14 +15,26 @@
 	
 	Spine.fn = Spine.prototype = {
 		
-		init: function(name){
+		__construct: function(name){
 			this._name = name;
 			return this;
 		},
 		
-		exec: function () {
+		init: function () {
 			this.runInit();
 			this.runConstruct();
+			this.install();
+			return this;
+		},
+		
+		install: function() {
+			if (this._intervals)
+				for (x in this._intervals) this.start(x);
+			
+			if (this._timers)
+				for (x in this._timers) this.run(x);
+			
+			return this;
 		},
 		
 		setAttribute: function(name, value) {
@@ -100,113 +112,48 @@
 				this._events[name].method.apply(this, Array.prototype.slice.call(arguments, 1));
 		},
 		
-		setTimer: function(name, method, time) {
-			
-			this._timers || (this._timers = {});
-
-			if (typeof method === 'number' && this._timers[name]) {
-
-				this._timers[name] = {
-					method: this._timers[name].method, 
-					status: true, 
-					timer: setTimeout(this._timers[name].method, method),
-					time: method
-				};
-
-			} else if (typeof method != 'function' && this._timers[name]) {
-
-				this._timers[name] = {
-					method: this._timers[name].method, 
-					status: true, 
-					timer: setTimeout(this._timers[name].method, this._timers[name].time),
-					time: this._timers[name].time
-				};
-
-			} else if (typeof method === 'function') {
-
-				this._timers[name] = {
-					method: method, 
-					status: true, 
-					timer: setTimeout(method, time),
-					time: time
-				};
-
-			} else {
-				return false;
-			}
-
-			return this;
-			
-		},
-		
-		unsetTimer: function(name) {
-			if (this._timers && this._timers[name]) {
-				this._timers[name].status = false;
-				clearTimeout(this._timers[name].timer);
-			}
-			return this;
-		},
-		
-		setInterval: function(name, method, time) {
-			
+		every: function(time, name, method) {
 			this._intervals || (this._intervals = {});
-			
-			if (typeof method === 'number' && this._intervals[name]) {
-				
-				this._intervals[name] = {
-					method: this._intervals[name].method, 
-					status: true, 
-					interval: setInterval(this._intervals[name].method, method),
-					time: method
-				};
-				
-			} else if (typeof method != 'function' && this._intervals[name]) {
-				
-				this._intervals[name] = {
-					method: this._intervals[name].method, 
-					status: true, 
-					interval: setInterval(this._intervals[name].method, this._intervals[name].time),
-					time: this._intervals[name].time
-				};
-				
-			} else if (typeof method === 'function') {
-				
-				this._intervals[name] = {
-					method: method, 
-					status: true, 
-					interval: setInterval(method, time),
-					time: time
-				};
-				
-			} else {
-				return false;
-			}
-			
+			this._intervals[name] = {time: time, method: method};
 			return this;
-			
 		},
-
-		unsetInterval: function(name) {
-			if (this._intervals && this._intervals[name]) {
-				this._intervals[name].status = false;
-				clearInterval(this._intervals[name].interval);
-			}
+		
+		start: function(name) {
+			if (!this._intervals || !this._intervals[name]) return false;
+			if (this._intervals[name].interval) clearInterval(this._intervals[name].interval);
+			this._intervals[name].interval = setInterval(this._intervals[name].method, this._intervals[name].time);
+		},
+		
+		stop: function(name) {
+			if (!this._intervals || !this._intervals[name]) return false;
+			clearInterval(this._intervals[name].interval);
+		},
+		
+		once: function(name, method, time) {
+			this._timers || (this._timers = {});
+			this._timers[name] = {time: time, method: method};
 			return this;
+		},
+		
+		run: function(name) {
+			if (!this._timers || !this._timers[name]) return false;
+			if (this._intervals[name].timer) clearTimeout(this._intervals[name].timer);
+			this._timers[name].timer = setTimeout(this._timers[name].method, this._timers[name].time);
 		}
 		
 	}
 	
-	Spine.fn.init.prototype = Spine.fn;
+	Spine.fn.__construct.prototype = Spine.fn;
 	
 	var elements = {};
 	
 	Spine.e = function(selector){
-		if (!elements[selector]) elements[selector] = new Spine.e.fn.init(selector);
+		if (!elements[selector]) elements[selector] = new Spine.e.fn.__construct(selector);
 		return elements[selector];
 	}
 	
 	Spine.$ = function(selector){
-		if (!elements[selector]) elements[selector] = new Spine.e.fn.init(selector);
+		if (!elements[selector]) elements[selector] = new Spine.e.fn.__construct(selector);
 		return elements[selector].get();
 	}
 	
@@ -214,7 +161,7 @@
 		
 		constructor: Spine,
 		
-		init: function(selector) {
+		__construct: function(selector) {
 			this._selector = selector;
 			return this;
 		},
@@ -297,7 +244,7 @@
 		
 	}
 	
-	Spine.e.fn.init.prototype = Spine.e.fn;
+	Spine.e.fn.__construct.prototype = Spine.e.fn;
 	
 	Spine.ready = Spine.prototype = function(method) {
 		
@@ -313,10 +260,10 @@
 	
 	Spine.load = Spine.prototype = function(object) {
 		
-		if (object instanceof Spine.fn.init) {
-			objects[object].exec();
+		if (object instanceof Spine.fn.__construct) {
+			Spine.ready(objects[object].init);
 		} else if (!object) {
-			Spine.ready(Spine.exec);
+			Spine.ready(Spine.init);
 		} else {
 			return false;
 		}
@@ -325,8 +272,8 @@
 		
 	}
 	
-	Spine.exec = Spine.prototype = function(object) {
-		for (x in objects) objects[x].exec();
+	Spine.init = Spine.prototype = function(object) {
+		for (x in objects) objects[x].init();
 		return true;
 	}
 	
@@ -334,8 +281,12 @@
 		
 		if (object) {
 			objects[object].runConstruct();
+			objects[object].install();
 		} else {
-			for (x in objects) objects[x].runConstruct();
+			for (x in objects) {
+				objects[x].runConstruct();
+				objects[x].install();
+			}
 		}
 		
 		for (x in elements) {
@@ -349,7 +300,7 @@
 	
 	Spine.html = Spine.prototype = function(object, html, method) {
 		
-		if (object instanceof Spine.e.fn.init) {
+		if (object instanceof Spine.e.fn.__construct) {
 			object.get().html(html);
 		} else if (object instanceof Spine.j) {
 			object.html(html);
@@ -365,7 +316,7 @@
 	
 	Spine.remove = Spine.prototype = function(object) {
 		
-		if (object instanceof Spine.e.fn.init) {
+		if (object instanceof Spine.e.fn.__construct) {
 			object.get().remove();
 		} else if (object instanceof Spine.j) {
 			object.remove();
