@@ -1,476 +1,383 @@
-/*!
- *
- * spine.js
- * my desperate attempt to organize and clean up jQuery
- *
- * (C) 2013 Noah Portes Chaikin
- * Released under the do-whatever-you-want-with-this license
- *
- * Version 1.0
- * created_at => 2013-05-16
- * updated_at => 2013-05-17 
- *
- */
-
 (function(window, undefined){
-
-var 
-
-	// The naming structure for objects
-	// Feel free to change these.
-	parents = {
-		s: 'selectors',
-		a: 'attributes',
-		construct: '__construct',
-		bind: '__bind',
-		init: 'init'
-	};
 	
-	// Intervals set with _.setInt
-	intervals = [],
+	// http://www.lyricsfreak.com/b/big+star/im+in+love+with+a+girl_20017622.html
 	
-	// Timeouts set with  _.setTime
-	timeouts = [],
+	var objects = {};
 	
-	// All elements called with
-	// spine.js are cached
-	elements = [],
+	var isReady;
 	
-	// Objects with construct methods
-	constructs = [],
+	Spine = function(name){
+		if (!objects[name]) objects[name] = new Spine.fn.init(name);
+		return objects[name];
+	},
 	
-	// Objects with bind methods
-	binds = [],
+	Spine.j = this.jQuery;
 	
-	// Events set with on();
-	events = [],
-	
-	// The jQuery.data attribute used for 
-	// storing event data.
-	eventAttr = 'ev',
-	
-	
-	Spine = function (selector, init) {
-		if ( init ) return new Spine.fn.execute(selector, true).init();
-		return new Spine.fn.execute(selector);
-	};
-
 	Spine.fn = Spine.prototype = {
 		
-		execute: function (selector) {
+		init: function(name){
+			this._name = name;
+			return this;
+		},
+		
+		exec: function () {
+			this.runInit();
+			this.runConstruct();
+		},
+		
+		setAttribute: function(name, value) {
+			if (!name || !value) return false;
+			this._attributes || (this._attributes = {});
+			this._attributes[name] = value;
+			return this;
+		},
+		
+		getAttribute: function(name) {
+			return this._attributes[name];
+		},
+		
+		setSelector: function(name, selector) {
+			if (!name || !selector) return false;
+			this._selectors || (this._selectors = {});
+			this._selectors[name] = selector;
+			return this;
+		},
+		
+		getSelector: function(selector) {
+			return this._selectors[selector];
+		},
+		
+		setMethod: function(name, method) {
+			if (typeof method != 'function') return false;
+			this._methods || (this._methods = {});
+			this._methods[name] = method;
+			return this;
+		},
+		
+		runMethod: function(name) {
+			if (!this._methods || typeof this._methods[name] !== 'function') return;
+			this._methods[name].apply(this, Array.prototype.slice.call(arguments, 1));
+		},
+		
+		setInit: function(method) {
+			if (typeof method != 'function') return false;
+			this._init = method;
+			return this;
+		},
+		
+		runInit: function() {
+			if (typeof this._init === 'function') return this._init();
+			return false;
+		},
+		
+		setConstruct: function(method) {
+			if (typeof method != 'function') return false;
+			this._construct = method;
+			return this;
+		},
+		
+		runConstruct: function() {
+			if (typeof this._construct === 'function') return this._construct();
+			return false;
+		},
+		
+		on: function(event, method) {
+			if (typeof method != 'function') return false;
+			this._events || (this._events = {});
+			this._events[name] = {method: method, status: true};
+			return this;
+		},
+		
+		off: function(event) {
+			if (this._events && this._events[name]) {
+				this._events[name].status = false;
+			}
+			return this;
+		},
+		
+		trigger: function(event) {
+			if (this._events && this._events[name] && this._events[name].status) 
+				this._events[name].method.apply(this, Array.prototype.slice.call(arguments, 1));
+		},
+		
+		setTimer: function(name, method, time) {
 			
-			this.selector = selector;
+			this._timers || (this._timers = {});
+
+			if (typeof method === 'number' && this._timers[name]) {
+
+				this._timers[name] = {
+					method: this._timers[name].method, 
+					status: true, 
+					timer: setTimeout(this._timers[name].method, method),
+					time: method
+				};
+
+			} else if (typeof method != 'function' && this._timers[name]) {
+
+				this._timers[name] = {
+					method: this._timers[name].method, 
+					status: true, 
+					timer: setTimeout(this._timers[name].method, this._timers[name].time),
+					time: this._timers[name].time
+				};
+
+			} else if (typeof method === 'function') {
+
+				this._timers[name] = {
+					method: method, 
+					status: true, 
+					timer: setTimeout(method, time),
+					time: time
+				};
+
+			} else {
+				return false;
+			}
+
+			return this;
 			
-			// Handle simple selectors
-			if ( typeof selector === 'string' ) {
-				// Handle simple object calls (ex: _('object'))
-				if ( selector.split(':').length == 1 && eval(this.selector) ) this.object = true;
-			// Handle window, document
-			} else if ( selector == window || selector == document ) {
-				this.element = $(selector);
-			// Handle jQuery objects
-			} else if ( typeof selector === 'object' ) {
-				this.element = selector;
+		},
+		
+		unsetTimer: function(name) {
+			if (this._timers && this._timers[name]) {
+				this._timers[name].status = false;
+				clearTimeout(this._timers[name].timer);
+			}
+			return this;
+		},
+		
+		setInterval: function(name, method, time) {
+			
+			this._intervals || (this._intervals = {});
+			
+			if (typeof method === 'number' && this._intervals[name]) {
+				
+				this._intervals[name] = {
+					method: this._intervals[name].method, 
+					status: true, 
+					interval: setInterval(this._intervals[name].method, method),
+					time: method
+				};
+				
+			} else if (typeof method != 'function' && this._intervals[name]) {
+				
+				this._intervals[name] = {
+					method: this._intervals[name].method, 
+					status: true, 
+					interval: setInterval(this._intervals[name].method, this._intervals[name].time),
+					time: this._intervals[name].time
+				};
+				
+			} else if (typeof method === 'function') {
+				
+				this._intervals[name] = {
+					method: method, 
+					status: true, 
+					interval: setInterval(method, time),
+					time: time
+				};
+				
+			} else {
+				return false;
 			}
 			
 			return this;
 			
 		},
-		
-		// grab element by selector
-		e: function () {
-			if ( !this.element ) {
-				// Cache elements by selector
-				if ( !elements[this.selector] ) elements[this.selector] = $(__v(this.selector, parents.s).join(' '));
-				// Grab element to use from cache
-				this.element = elements[this.selector];
-			}
-			return this.element;
-		},
-		
-		// grab attribute
-		a: function (value) {
-			if ( !this.attribute ) this.attribute = __last(__v(this.selector, parents.a));
-			// if value is present, set value
-			if ( value != undefined ) this.set(value);
-			return this.attribute;
-		},
-		
-		// grab css selector
-		s: function() {
-			if ( !this.cssSelector ) this.cssSelector = __v(this.selector, parents.s).join(' ');
-			return this.cssSelector;
-		},
-		
-		// grab css class (by selector)
-		c: function () {
-			if ( !this.cssClass ) this.cssClass = __v(this.selector, parents.s).join(' ').substring(1);
-			return this.cssClass;
-		},
 
-		// grab css ID (by selector)
-		i: function () {
-			if ( !this.cssId ) this.cssId = __v(this.selector, parents.s).join(' ').substring(1);
-			return this.cssId;
-		},
-		
-		// this is really just a helper function
-		// for returning css data attributes (i.e. [data-attr])
-		d: function (value) {
-			if ( !this.attribute ) this.attribute = this.a();
-			// return with value if value set
-			if ( value != undefined ) return '[data-' + this.attribute + '="' + value + '"]';
-			return '[data-' + this.attribute + ']';
-		},
-		
-		// set an attribute
-		set: function (value) {
-			if ( !this.attribute ) this.attribute = __v(this.selector, parents.a);
-			if ( this.attribute ) __set(__k(this.selector, parents.a), value);
-		},
-		
-		// set and cache an event handler for easy cleanup
-		on: function (e, callback) {
-			if ( e && typeof callback === 'function' && this.e() ) {
-				this.e().on(__eventName(this.e(), e), 
-					function (eventData) {
-						callback.call($(this), eventData);
-					}
-				)
+		unsetInterval: function(name) {
+			if (this._intervals && this._intervals[name]) {
+				this._intervals[name].status = false;
+				clearInterval(this._intervals[name].interval);
 			}
+			return this;
+		}
+		
+	}
+	
+	Spine.fn.init.prototype = Spine.fn;
+	
+	var elements = {};
+	
+	Spine.e = function(selector){
+		if (!elements[selector]) elements[selector] = new Spine.e.fn.init(selector);
+		return elements[selector];
+	}
+	
+	Spine.$ = function(selector){
+		if (!elements[selector]) elements[selector] = new Spine.e.fn.init(selector);
+		return elements[selector].get();
+	}
+	
+	Spine.e.fn = Spine.prototype = {
+		
+		constructor: Spine,
+		
+		init: function(selector) {
+			this._selector = selector;
+			return this;
 		},
 		
-		// unset event handler
-		off: function (e) {
-			var ev = this.e().data(eventAttr) || [];
-			if ( e && ev[e] ) {
-				for ( x in ev[e] ) {
-					this.e().off(ev[e][i]);
-				}
+		get: function() {
+			this._element || (this._element = Spine.j(selector(this._selector)));
+			return this._element;
+		},
+		
+		on: function(event, method) {
+			this._element || this.get();
+			this._events || (this._events = {});
+			if (typeof method != 'function' && this._events[name]) {
+				this._events[name].status = true;
 			} else {
-				for ( x in ev ) {
-					for ( y in ev[x] ) {
-						this.e().off(ev[x][y]);
-					}
-				}
+				this._events[name] = {method: method, status: true};
 			}
+			this._element.on(event, this._events[name].method);
+			return this;
 		},
 		
-		// initialize an object
-		// you don't need to run your construct
-		// or binds in your object.init() method,
-		// as this method will run all of the above.
-		init: function () {
-			
-			if ( this.object ) {
-				init(this.selector);
-				construct(this.selector);
-				bind(this.selector);
-				return this;
+		off: function(event) {
+			this._element || this.get();
+			if (this._events && this._events[name]) {
+				this._events[name].status = false;
+				this._element.off(event);
 			}
-			
-			return false;
-			
-		}
-	
-	};
-	
-	// load an object based on an event
-	// e: event
-	// el: object to bind event to (selector, jQ object, window/document)
-	Spine.load = Spine.fn.load = function ( selector, el, e ) {
-		if ( el == document || el == window ) {
-			$(el).on(e, function () { Spine(selector, true) });
-		} else if ( typeof el == 'object' ) {
-			el.on(e, function () { Spine(selector, true) });
-		} else if ( typeof el == 'string' ) {
-			Spine(selector).on(e, function () { Spine(selector, true) });
+			return this;
+		},
+		
+		trigger: function(event) {
+			this._element || this.get();
+			if (this._events && this._events[name] && this._events[name].status)
+				this._element.trigger(event);
+		},
+		
+		bindEvents: function() {
+			if (!this._events) return false;
+			this.wipeEvents();
+			for (x in this._events) this.on(x, this._events[x].method);
+			return this;
+		},
+		
+		wipeEvents: function() {
+			if (!this._events) return false;
+			for (x in this._events) this.off(x);
+			return this;
+		},
+		
+		html: function(html) {
+			this._element || this.get();
+			return Spine.html(this, html);
+		},
+		
+		remove: function() {
+			this._element || this.get();
+			return Spine.remove(this);
+		},
+		
+		clean: function () {
+			if (this._element) this._element = false;
+			return this;
 		}
 		
 	}
 	
-	// insert HTML inside an element
-	// selector can be Spine selector
-	// or jQ object
-	// runs Spine.install on completion
-	// and has callback argument (with el
-	// set as this.
-	Spine.insert = Spine.fn.insert = function ( selector, url, callback ) {
+	function selector(selector) {
 		
-		var el;
-		
-		if ( typeof selector == 'string' ) {
-			el = Spine(selector).e();
-		} else if ( typeof selector == 'object' ) {
-			el = $(selector);
-		}
-		
-		$.get ( url, 
-			function (r) {
-				el.html(r);
-				Spine.install();
-				if ( typeof callback == 'function' ) callback.call( el );
+		var array = [];
+		if (typeof selector === 'string') {
+			selectors = selector.split('/');
+			for (x in selectors) {
+				selectors[x] = selectors[x].split(':');
+				array.push(Spine(selectors[x][0]).getSelector(selectors[x][1]));
 			}
-		)
-		
-	}
-	
-	
-	// remove an element by selector
-	// (either Spine selector or jQ object)
-	// has callback argument with el
-	// set as this.
-	Spine.remove = Spine.fn.remove = function ( selector, callback ) {
-		
-		if ( typeof selector == 'string' ) {
-			el = Spine(selector).e();
-		} else if ( typeof selector == 'object' ) {
-			el = $(selector);
-		}
-		
-		el.remove();
-		if ( typeof callback == 'function' ) callback.call(el);
-		
-	}
-	
-	// set an interval in Spine cache
-	// that can be easily wiped
-	Spine.setInt = Spine.fn.setInt = function (name, fn, num) {
-		
-		if ( !intervals[name] ) {
-			intervals[name] = setInterval(fn, num);
-			return true;
+			return array.join(' ');
 		}
 		
 		return false;
 		
-	};
+	}
 	
-	// delete a Spine-cached interval
-	Spine.delInt = Spine.fn.delInt = function (name) {
+	Spine.e.fn.init.prototype = Spine.e.fn;
+	
+	Spine.ready = Spine.prototype = function(method) {
 		
-		if ( intervals[name] ) {
-			clearInterval(intervals[name]);
-			return true;
+		if ( !document.body ) {
+			return setTimeout(Spine.ready);
 		}
 		
-		return false;
-		
-	};
-	
-	// set a timeout in Spine cache
-	// that can be easily wiped
-	Spine.setTime = Spine.fn.setTime = function (name, fn, num) {
-		
-		timeouts[name] = setTimeout(fn, num);
+		isReady = true;
+		if (method) return method.call();
 		return true;
 		
-	};
+	}
 	
-	// delete a Spine-cached timeout
-	Spine.delTime = Spine.fn.delTime = function (name) {
+	Spine.load = Spine.prototype = function(object) {
 		
-		if ( timeouts[name] ) {
-			clearTimeout(timeouts[name]);
-			return true;
+		if (object instanceof Spine.fn.init) {
+			objects[object].exec();
+		} else if (!object) {
+			Spine.ready(Spine.exec);
+		} else {
+			return false;
 		}
 		
-		return false;
-		
-	};
-	
-	// wipes elements, intervals, and timeouts
-	// cache.  very useful for managing XHR-heavy
-	// sites (like sites with the Turbolinks gem
-	// or with XHR-based overlays, etc)
-	Spine.clear = Spine.fn.clear = function () {
-		
-		elements = [];
-		
-		for ( var n in intervals )
-			clearInterval ( intervals[n] )
-		
-		for ( var n in timeouts )
-			clearTimeout ( timeouts[n] )
-		
-	};
-	
-	// reinstalls binds and re-constructs
-	// cached objects
-	Spine.install = Spine.fn.install = function () {
-		
-		Spine.sweepEvents();
-		elements = [];
-		
-		for (x in binds) {
-			bind(x);
-		}
-		
-		for (x in constructs) {
-			construct(x);
-		}
-		
-	};
-	
-	// wipes all Spine events from 
-	// all elements in the DOM
-	Spine.sweepEvents = Spine.fn.down = function () {
-
-		for (x in events) {
-			$('*').off(events[x]);
-		}
+		return true;
 		
 	}
 	
-	// a helper for creating unique strings
-	// useful when creating timeouts and intervals
-	Spine.unique = Spine.fn.unique = function(name) {
-		return name + Math.ceil(Math.random()*1000);
+	Spine.exec = Spine.prototype = function(object) {
+		for (x in objects) objects[x].exec();
+		return true;
 	}
 	
-	// executes object inits
-	function init (selector) {
+	Spine.install = Spine.prototype = function(object) {
 		
-		if ( eval(selector)[parents.init] ) {
-			eval(selector)[parents.init].call();
-			return true;
-		}
-		return false;
-	};
-	
-	// executes object constructs
-	function construct (selector) {
-		if ( eval(selector)[parents.construct] ) {
-			constructs[selector] = true;
-			eval(selector)[parents.construct].call();
-			return true;
-		}
-		return false;
-	};
-	
-	// executes object binds
-	function bind (selector) {
-		if ( eval(selector)[parents.bind] ) {
-			binds[selector] = true;
-			eval(selector)[parents.bind].call();
-			return true;
-		}
-		return false;
-	};
-	
-	// return value of selector
-	function __v (selector, parent) {
-		
-		if ( typeof selector === 'string' ) {
-			
-			var value = [],
-			selectors = selector.split('/');
-
-			for ( x in selectors ) {
-				selectors[x] = selectors[x].split(':');
-				value.push(eval(selectors[x][0])[parent][selectors[x][1]]);
-			}
-			
-			return value;
-			
+		if (object) {
+			objects[object].runConstruct();
+		} else {
+			for (x in objects) objects[x].runConstruct();
 		}
 		
-		return false;
+		for (x in elements) {
+			elements[x].clean();
+			elements[x].bindEvents();
+		} 
 		
-	};
-	
-	// return selector's actual "object path"
-	function __k (selector, parent) {
-		
-		if ( typeof selector === 'string' ) {
-			var selectors = selector.split('/');
-			selector = selectors[0].split(':');
-			return selector[0] + '.' + parent + '.' + selector[1];
-		}
-		
-		return false;
+		return true;
 		
 	}
 	
-	// set selector's actual "object path" 
-	// to new value
-	function __set (key, value) {
+	Spine.html = Spine.prototype = function(object, html, method) {
 		
-		if ( typeof key == 'string' ) {
-			eval(key + ' = ' + value);
-			return true;
+		if (object instanceof Spine.e.fn.init) {
+			object.get().html(html);
+		} else if (object instanceof Spine.j) {
+			object.html(html);
+		} else {
+			return false;
 		}
 		
-		return false;
+		if (method) method.call(object);
+		Spine.install();
+		return true;
 		
 	}
 	
-	// returns an event name and adds
-	// event to Spine cache
-	function __eventName (el, e) {
+	Spine.remove = Spine.prototype = function(object) {
 		
-		var unique = e + '.' + Math.ceil(Math.random()*1000),
-		ev = el.data(eventAttr) || [];
+		if (object instanceof Spine.e.fn.init) {
+			object.get().remove();
+		} else if (object instanceof Spine.j) {
+			object.remove();
+		} else {
+			return false;
+		}
 		
-		if (!ev[e]) ev[e] = [];
-		
-		ev[e].push(unique);
-		el.data(eventAttr, ev);
-		
-		events.push(unique);
-		return unique;
+		if (method) method.call(object);
+		return true;
 		
 	}
 	
-	// just re-naming pop() (gets
-	// last value in array)
-	function __last (array) {
-		return array.pop();
-	}
-	
-	
-	// e => _(selector).e();
-	e = function (selector) {
-		return new Spine.fn.execute(selector).e();
-	};
-	
-	// a => _(selector).a();
-	a = function (selector, value) {
-		return new Spine.fn.execute(selector).a(value);
-	};
-	
-	// s => _(selector).s();
-	s = function (selector) {
-		return new Spine.fn.execute(selector).s();
-	};
-	
-	// c => _(selector).c();
-	c = function (selector) {
-		return new Spine.fn.execute(selector).c();
-	};
-	
-	// i => _(selector).i();
-	i = function (selector) {
-		return new Spine.fn.execute(selector).i();
-	};
-	
-	// d => _(selector).d(value);
-	d = function (selector, value) {
-		return new Spine.fn.execute(selector).d(value);
-	};
-	
-	// on => _(selector).on(e, callback);
-	on = function (selector, e, callback) {
-		return new Spine.fn.execute(selector).on(e, callback);
-	};
-	
-	// on => _(selector).off(e, callback);
-	off = function (selector, e, callback) {
-		return new Spine.fn.execute(selector).off(e, callback);
-	};
-	
-	// add Spine to global object
-	Spine.fn.execute.prototype = Spine.fn;
 	window.Spine = window._ = Spine;
-
+	
 })(window);
