@@ -1,7 +1,5 @@
 (function(window, undefined){
 	
-	// http://www.lyricsfreak.com/b/big+star/im+in+love+with+a+girl_20017622.html
-	
 	var objects = {};
 	
 	var isReady;
